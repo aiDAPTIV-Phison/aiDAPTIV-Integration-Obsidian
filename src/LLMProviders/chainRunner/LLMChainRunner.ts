@@ -3,7 +3,7 @@ import { LayerToMessagesConverter } from "@/context/LayerToMessagesConverter";
 import { logInfo } from "@/logger";
 import { getSettings } from "@/settings/model";
 import { ChatMessage } from "@/types/message";
-import { extractChatHistory, findCustomModel, withSuppressedTokenWarnings } from "@/utils";
+import { findCustomModel, withSuppressedTokenWarnings } from "@/utils";
 import { BaseChainRunner } from "./BaseChainRunner";
 import { recordPromptPayload } from "./utils/promptPayloadRecorder";
 import { ThinkBlockStreamer } from "./utils/ThinkBlockStreamer";
@@ -24,10 +24,11 @@ export class LLMChainRunner extends BaseChainRunner {
 
     logInfo("[LLMChainRunner] Using envelope-based context");
 
-    // Get chat history from memory (L4)
-    const memory = this.chainManager.memoryManager.getMemory();
-    const memoryVariables = await memory.loadMemoryVariables({});
-    const chatHistory = extractChatHistory(memoryVariables);
+    // Skip chat history (L4) to avoid including previous conversation turns
+
+    // const memory = this.chainManager.memoryManager.getMemory();
+    // const memoryVariables = await memory.loadMemoryVariables({});
+    // const chatHistory = extractChatHistory(memoryVariables);
 
     // Convert envelope to messages (L1 system + L2+L3+L5 user)
     const baseMessages = LayerToMessagesConverter.convert(userMessage.contextEnvelope, {
@@ -36,7 +37,7 @@ export class LLMChainRunner extends BaseChainRunner {
       debug: false,
     });
 
-    // Insert L4 (chat history) between system and user
+    // Build messages array without chat history
     const messages: any[] = [];
 
     // Add system message (L1)
@@ -45,10 +46,7 @@ export class LLMChainRunner extends BaseChainRunner {
       messages.push(systemMessage);
     }
 
-    // Add chat history (L4)
-    for (const entry of chatHistory) {
-      messages.push({ role: entry.role, content: entry.content });
-    }
+    // Skip chat history (L4) - intentionally omitted to avoid including previous conversation turns
 
     // Add user message (L2+L3+L5 merged)
     const userMessageContent = baseMessages.find((m) => m.role === "user");
@@ -83,6 +81,7 @@ export class LLMChainRunner extends BaseChainRunner {
       debug?: boolean;
       ignoreSystemMessage?: boolean;
       updateLoading?: (loading: boolean) => void;
+      maxTokens?: number;
     }
   ): Promise<string> {
     // Check if the current model has reasoning capability
@@ -119,19 +118,50 @@ export class LLMChainRunner extends BaseChainRunner {
 
       logInfo("Final Request to AI:\n", messages);
 
-      // Stream with abort signal
+      // Stream with abort signal and optional maxTokens override
+      const streamOptions: any = {
+        signal: abortController.signal,
+      };
+      if (options.maxTokens !== undefined) {
+        streamOptions.maxTokens = options.maxTokens;
+      }
+
       const chatStream = await withSuppressedTokenWarnings(() =>
-        this.chainManager.chatModelManager.getChatModel().stream(messages, {
-          signal: abortController.signal,
-        })
+        this.chainManager.chatModelManager.getChatModel().stream(messages, streamOptions)
       );
+
+      // If maxTokens is set (e.g., for KV cache building), stop after receiving enough content
+      const maxTokensLimit = options.maxTokens;
+      const shouldLimitTokens = maxTokensLimit !== undefined && maxTokensLimit > 0;
+      let receivedContent = "";
 
       for await (const chunk of chatStream) {
         if (abortController.signal.aborted) {
           logInfo("Stream iteration aborted", { reason: abortController.signal.reason });
           break;
         }
+
+        const chunkText = chunk.content?.toString() || "";
+        receivedContent += chunkText;
         streamer.processChunk(chunk);
+
+        // For KV cache building with very small maxTokens (like 1-5), stop immediately after first chunk
+        // This ensures KV cache is built but minimizes response length
+        if (shouldLimitTokens) {
+          // For very small limits (1-5 tokens), stop after first non-empty chunk
+          // For larger limits, stop after receiving approximately maxTokens worth of content
+          // Rough estimate: 1 token ≈ 4 characters
+          const shouldStopEarly = maxTokensLimit <= 5 && receivedContent.length > 0;
+          const shouldStopByLength = receivedContent.length >= maxTokensLimit * 4;
+
+          if (shouldStopEarly || shouldStopByLength) {
+            logInfo(
+              `Reached maxTokens limit (${maxTokensLimit} tokens), aborting stream after ${receivedContent.length} chars`
+            );
+            abortController.abort();
+            break;
+          }
+        }
       }
     } catch (error: any) {
       // Check if the error is due to abort signal
