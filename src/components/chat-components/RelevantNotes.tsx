@@ -439,28 +439,35 @@ export const RelevantNotes = memo(
               )}
             </div>
             <div className="tw-flex tw-items-center tw-gap-2">
-              {isBuildingKvCache && (
-                <div className="tw-flex tw-items-center tw-gap-2 tw-text-xs tw-text-muted">
-                  <Loader2 className="tw-size-4 tw-animate-spin" />
-                  <span>Building KV cache...</span>
-                </div>
-              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost2"
-                    size="icon"
+                    size="fit"
                     onClick={buildKvCache}
                     disabled={isBuildingKvCache}
+                    className="tw-gap-1.5 tw-px-2"
                   >
                     {isBuildingKvCache ? (
-                      <Loader2 className="tw-size-4 tw-animate-spin" />
+                      <>
+                        <span className="tw-text-xs tw-font-medium tw-text-loading">
+                          Building...
+                        </span>
+                        <Loader2 className="tw-size-4 tw-animate-spin tw-text-loading" />
+                      </>
                     ) : (
-                      <Zap className="tw-size-4" />
+                      <>
+                        <span className="tw-text-xs tw-font-medium tw-text-warning">
+                          Build KV Cache
+                        </span>
+                        <Zap className="tw-size-4 tw-text-warning tw-drop-shadow-sm" />
+                      </>
                     )}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Build Knowledge for Current Note</TooltipContent>
+                <TooltipContent side="bottom">
+                  Build KV cache for faster AI responses
+                </TooltipContent>
               </Tooltip>
               {relevantNotes.length > 0 && (
                 <CollapsibleTrigger asChild>
