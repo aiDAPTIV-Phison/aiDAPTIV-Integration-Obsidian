@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 REM Phison aiDAPTIV+ for Obsidian - Installation Script
 REM This script automates the installation of the plugin to your Obsidian vault
 
@@ -187,7 +187,7 @@ echo   4. Click the Copilot icon in the left sidebar
 echo.
 echo Plugin installed to: %PLUGIN_TARGET_DIR%
 echo.
-echo Happy note-taking! 🚀
+echo Happy note-taking!
 echo.
 
 pause
