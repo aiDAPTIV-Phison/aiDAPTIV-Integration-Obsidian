@@ -4,7 +4,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpTooltip } from "@/components/ui/help-tooltip";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TTFTMetric } from "@/components/ui/ttft-metric";
 import { useChatInput } from "@/context/ChatInputContext";
+import { useTTFTContext } from "@/context/TTFTContext";
 import { useActiveFile } from "@/hooks/useActiveFile";
 import { cn } from "@/lib/utils";
 import {
@@ -289,6 +291,7 @@ export const RelevantNotes = memo(
     const chatInput = useChatInput();
     const hasIndex = useHasIndex(activeFile?.path ?? "", refresher);
     const [currentChain] = useChainType();
+    const { currentTTFT: ttft, showTTFT, hideTTFT } = useTTFTContext();
 
     const navigateToNote = (notePath: string, openInNewLeaf = false) => {
       const file = app.vault.getAbstractFileByPath(notePath);
@@ -382,13 +385,23 @@ export const RelevantNotes = memo(
         // Don't modify llmMessage.content - it's already processed by ChatManager
         const llmMessage = chatUIState.getLLMMessage(messageId);
         if (llmMessage) {
+          // Show TTFT metric during build process
+          hideTTFT(); // Reset any previous TTFT display
+
+          // Create a custom addMessage function that captures TTFT from responseMetadata
+          const addMessageWithTTFT = (message: any) => {
+            if (message.responseMetadata?.ttft) {
+              showTTFT(message.responseMetadata.ttft);
+            }
+          };
+
           // Trigger AI response without updating UI
           // Use maxTokens: 1 to minimize response length (we only need KV cache, not the response)
           // The stream will be aborted after receiving ~1 token worth of content
           await getAIResponse(
             llmMessage,
             chainManager,
-            () => {}, // No-op for addMessage (don't show in UI)
+            addMessageWithTTFT, // Capture TTFT from response metadata
             () => {}, // No-op for setCurrentAiMessage
             () => {}, // No-op for setAbortController
             { debug: false, updateLoadingMessage: () => {}, maxTokens: 1 }
@@ -439,36 +452,40 @@ export const RelevantNotes = memo(
               )}
             </div>
             <div className="tw-flex tw-items-center tw-gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost2"
-                    size="fit"
-                    onClick={buildKvCache}
-                    disabled={isBuildingKvCache}
-                    className="tw-gap-1.5 tw-px-2"
-                  >
-                    {isBuildingKvCache ? (
-                      <>
-                        <span className="tw-text-xs tw-font-medium tw-text-loading">
-                          Building...
-                        </span>
-                        <Loader2 className="tw-size-4 tw-animate-spin tw-text-loading" />
-                      </>
-                    ) : (
-                      <>
-                        <span className="tw-text-xs tw-font-medium tw-text-warning">
-                          Build KV Cache
-                        </span>
-                        <Zap className="tw-size-4 tw-text-warning tw-drop-shadow-sm" />
-                      </>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  Build KV cache for faster AI responses
-                </TooltipContent>
-              </Tooltip>
+              <div className="tw-flex tw-flex-col tw-items-end tw-gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost2"
+                      size="fit"
+                      onClick={buildKvCache}
+                      disabled={isBuildingKvCache}
+                      className="tw-gap-1.5 tw-px-2"
+                    >
+                      {isBuildingKvCache ? (
+                        <>
+                          <span className="tw-text-xs tw-font-medium tw-text-loading">
+                            Building...
+                          </span>
+                          <Loader2 className="tw-size-4 tw-animate-spin tw-text-loading" />
+                        </>
+                      ) : (
+                        <>
+                          <span className="tw-text-xs tw-font-medium tw-text-warning">
+                            Build KV Cache
+                          </span>
+                          <Zap className="tw-size-4 tw-text-warning tw-drop-shadow-sm" />
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    Build KV cache for faster AI responses
+                  </TooltipContent>
+                </Tooltip>
+                {/* TTFT Metric Display - Always visible, below Build KV Cache button */}
+                <TTFTMetric ttft={ttft ?? undefined} isVisible={true} />
+              </div>
               {relevantNotes.length > 0 && (
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost2" size="icon">
@@ -485,9 +502,15 @@ export const RelevantNotes = memo(
           {relevantNotes.length === 0 && (
             <div className="tw-flex tw-max-h-12 tw-flex-wrap tw-gap-x-2 tw-gap-y-1 tw-overflow-y-hidden tw-px-1">
               <span className="tw-text-xs tw-text-muted">
-                {!hasIndex
-                  ? "No index available. Click refresh to build index."
-                  : "No relevant notes found"}
+                {!hasIndex ? (
+                  <>
+                    No index available.
+                    <br />
+                    Click refresh to build index.
+                  </>
+                ) : (
+                  "No relevant notes found"
+                )}
               </span>
             </div>
           )}

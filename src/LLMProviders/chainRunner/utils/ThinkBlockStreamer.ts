@@ -15,12 +15,25 @@ export class ThinkBlockStreamer {
   private shouldTruncate = false;
   private wasTruncated = false;
   private tokenUsage: TokenUsage | null = null;
+  private ttftStartTime: number | null = null;
+  private ttft: number | undefined = undefined;
+  private firstTokenReceived = false;
 
   constructor(
     private updateCurrentAiMessage: (message: string) => void,
     private modelAdapter?: ModelAdapter,
-    private excludeThinking: boolean = false
+    private excludeThinking: boolean = false,
+    private onFirstToken?: (ttft: number) => void
   ) {}
+
+  /**
+   * Start TTFT measurement
+   */
+  startTTFTMeasurement() {
+    this.ttftStartTime = performance.now();
+    this.firstTokenReceived = false;
+    this.ttft = undefined;
+  }
 
   private handleClaudeChunk(content: any[]) {
     let textContent = "";
@@ -137,6 +150,16 @@ export class ThinkBlockStreamer {
       return;
     }
 
+    // Calculate TTFT on first meaningful content
+    if (!this.firstTokenReceived && this.ttftStartTime && this.hasContentInChunk(chunk)) {
+      this.ttft = performance.now() - this.ttftStartTime;
+      this.firstTokenReceived = true;
+      // Notify callback if provided
+      if (this.onFirstToken) {
+        this.onFirstToken(this.ttft);
+      }
+    }
+
     // Detect truncation using multi-provider detector
     const truncationResult = detectTruncation(chunk);
     if (truncationResult.wasTruncated) {
@@ -212,6 +235,37 @@ export class ThinkBlockStreamer {
     return truncated;
   }
 
+  /**
+   * Check if chunk contains meaningful content for TTFT calculation
+   */
+  private hasContentInChunk(chunk: any): boolean {
+    // Check for Claude format with content array
+    if (Array.isArray(chunk.content)) {
+      return chunk.content.some(
+        (item: any) =>
+          (item.type === "text" && item.text?.trim()) ||
+          (item.type === "thinking" && item.thinking?.trim())
+      );
+    }
+
+    // Check for standard string content
+    if (typeof chunk.content === "string" && chunk.content.trim()) {
+      return true;
+    }
+
+    // Check for Deepseek reasoning content
+    if (chunk.additional_kwargs?.reasoning_content?.trim()) {
+      return true;
+    }
+
+    // Check for OpenRouter delta reasoning
+    if (chunk.additional_kwargs?.delta?.reasoning?.trim()) {
+      return true;
+    }
+
+    return false;
+  }
+
   processErrorChunk(errorMessage: string) {
     this.errorResponse = formatErrorChunk(errorMessage);
   }
@@ -232,6 +286,7 @@ export class ThinkBlockStreamer {
       content: this.fullResponse,
       wasTruncated: this.wasTruncated,
       tokenUsage: this.tokenUsage,
+      ttft: this.ttft,
     };
   }
 }

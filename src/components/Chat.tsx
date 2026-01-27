@@ -28,6 +28,7 @@ import {
 } from "@/constants";
 import { AppContext, EventTargetContext } from "@/context";
 import { ChatInputProvider, useChatInput } from "@/context/ChatInputContext";
+import { useTTFTContext } from "@/context/TTFTContext";
 import { useChatManager } from "@/hooks/useChatManager";
 import { useChatFileDrop } from "@/hooks/useChatFileDrop";
 import { getAIResponse } from "@/langchainStream";
@@ -79,8 +80,9 @@ const ChatInternal: React.FC<ChatProps & { chatInput: ReturnType<typeof useChatI
   const [inputMessage, setInputMessage] = useState("");
   const [latestTokenCount, setLatestTokenCount] = useState<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const { showTTFT } = useTTFTContext();
 
-  // Wrapper for addMessage that tracks token usage from AI responses
+  // Wrapper for addMessage that tracks token usage and TTFT from AI responses
   const addMessage = useCallback(
     (message: ChatMessage) => {
       rawAddMessage(message);
@@ -88,8 +90,12 @@ const ChatInternal: React.FC<ChatProps & { chatInput: ReturnType<typeof useChatI
       if (message.sender === AI_SENDER && message.responseMetadata?.tokenUsage?.totalTokens) {
         setLatestTokenCount(message.responseMetadata.tokenUsage.totalTokens);
       }
+      // Show TTFT metric for user chat interactions
+      if (message.sender === AI_SENDER && message.responseMetadata?.ttft) {
+        showTTFT(message.responseMetadata.ttft);
+      }
     },
-    [rawAddMessage]
+    [rawAddMessage, showTTFT]
   );
 
   // Function to set the abort controller ref (for getAIResponse compatibility)

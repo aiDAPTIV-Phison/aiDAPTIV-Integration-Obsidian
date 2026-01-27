@@ -250,6 +250,9 @@ ${params}
     // Create ThinkBlockStreamer to manage all content and errors
     const thinkStreamer = new ThinkBlockStreamer(updateCurrentAiMessage, adapter, excludeThinking);
 
+    // Start TTFT measurement
+    thinkStreamer.startTTFTMeasurement();
+
     if (!isPlusUser) {
       await this.handleError(
         new Error("Invalid license key"),
@@ -527,6 +530,7 @@ ${params}
       responseMetadata = {
         wasTruncated: response.wasTruncated,
         tokenUsage: response.tokenUsage ?? undefined,
+        ttft: response.ttft ?? undefined,
       };
 
       const responseContent = response.content;
@@ -890,6 +894,9 @@ ${params}
 
     const streamer = new ThinkBlockStreamer(updateCurrentAiMessage, adapter, excludeThinking);
 
+    // Start TTFT measurement
+    streamer.startTTFTMeasurement();
+
     const maxRetries = 2;
     let retryCount = 0;
 
@@ -923,6 +930,7 @@ ${params}
           content: result.content,
           wasTruncated: result.wasTruncated,
           tokenUsage: result.tokenUsage,
+          ttft: result.ttft,
         };
       } catch (error) {
         if (error.name === "AbortError" || abortController.signal.aborted) {
@@ -931,6 +939,7 @@ ${params}
             content: result.content,
             wasTruncated: result.wasTruncated,
             tokenUsage: result.tokenUsage,
+            ttft: result.ttft,
           };
         }
 
@@ -961,6 +970,7 @@ ${params}
       content: result.content,
       wasTruncated: result.wasTruncated,
       tokenUsage: result.tokenUsage,
+      ttft: result.ttft,
     };
   }
 }

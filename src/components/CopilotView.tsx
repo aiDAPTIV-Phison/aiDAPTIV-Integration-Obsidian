@@ -2,6 +2,7 @@ import ChainManager from "@/LLMProviders/chainManager";
 import Chat from "@/components/Chat";
 import { CHAT_VIEWTYPE } from "@/constants";
 import { AppContext, EventTargetContext } from "@/context";
+import { TTFTProvider } from "@/context/TTFTContext";
 import CopilotPlugin from "@/main";
 import { FileParserManager } from "@/tools/FileParserManager";
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -69,16 +70,18 @@ export default class CopilotView extends ItemView {
     this.root.render(
       <AppContext.Provider value={this.app}>
         <EventTargetContext.Provider value={this.eventTarget}>
-          <Tooltip.Provider delayDuration={0}>
-            <Chat
-              chainManager={this.chainManager}
-              updateUserMessageHistory={updateUserMessageHistory}
-              fileParserManager={this.fileParserManager}
-              plugin={this.plugin}
-              onSaveChat={handleSaveAsNote}
-              chatUIState={this.plugin.chatUIState}
-            />
-          </Tooltip.Provider>
+          <TTFTProvider>
+            <Tooltip.Provider delayDuration={0}>
+              <Chat
+                chainManager={this.chainManager}
+                updateUserMessageHistory={updateUserMessageHistory}
+                fileParserManager={this.fileParserManager}
+                plugin={this.plugin}
+                onSaveChat={handleSaveAsNote}
+                chatUIState={this.plugin.chatUIState}
+              />
+            </Tooltip.Provider>
+          </TTFTProvider>
         </EventTargetContext.Provider>
       </AppContext.Provider>
     );

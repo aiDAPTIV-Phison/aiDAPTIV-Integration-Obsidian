@@ -126,6 +126,9 @@ export class LLMChainRunner extends BaseChainRunner {
         streamOptions.maxTokens = options.maxTokens;
       }
 
+      // Start TTFT measurement BEFORE starting the stream
+      streamer.startTTFTMeasurement();
+
       const chatStream = await withSuppressedTokenWarnings(() =>
         this.chainManager.chatModelManager.getChatModel().stream(messages, streamOptions)
       );
@@ -179,6 +182,7 @@ export class LLMChainRunner extends BaseChainRunner {
     const responseMetadata = {
       wasTruncated: result.wasTruncated,
       tokenUsage: result.tokenUsage ?? undefined,
+      ttft: result.ttft ?? undefined,
     };
 
     // Only skip saving if it's a new chat (clearing everything)

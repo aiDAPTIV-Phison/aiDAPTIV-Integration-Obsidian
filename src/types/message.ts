@@ -51,6 +51,9 @@ export interface ResponseMetadata {
 
   /** Token usage statistics */
   tokenUsage?: TokenUsage;
+
+  /** Time to first token (in milliseconds) */
+  ttft?: number;
 }
 
 /**
@@ -66,6 +69,9 @@ export interface StreamingResult {
 
   /** Token usage statistics (may be null if not yet available) */
   tokenUsage: TokenUsage | null;
+
+  /** Time to first token (in milliseconds) */
+  ttft?: number;
 }
 
 /**

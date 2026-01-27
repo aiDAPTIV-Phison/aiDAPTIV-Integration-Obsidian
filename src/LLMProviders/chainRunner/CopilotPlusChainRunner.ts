@@ -468,6 +468,9 @@ export class CopilotPlusChainRunner extends BaseChainRunner {
       undefined,
       excludeThinking
     );
+
+    // Start TTFT measurement
+    thinkStreamer.startTTFTMeasurement();
     let sources: { title: string; path: string; score: number; explanation?: any }[] = [];
 
     const isPlusUser = await checkIsPlusUser({
@@ -578,6 +581,7 @@ export class CopilotPlusChainRunner extends BaseChainRunner {
     const responseMetadata: ResponseMetadata | undefined = {
       wasTruncated: streamResult.wasTruncated,
       tokenUsage: streamResult.tokenUsage ?? undefined,
+      ttft: streamResult.ttft ?? undefined,
     };
 
     // Add fallback sources if citations are missing

@@ -219,6 +219,9 @@ export class VaultQAChainRunner extends BaseChainRunner {
 
       logInfo("Final Request to AI:\n", messages);
 
+      // Start TTFT measurement BEFORE starting the stream
+      streamer.startTTFTMeasurement();
+
       // Stream with abort signal
       const chatStream = await withSuppressedTokenWarnings(() =>
         this.chainManager.chatModelManager.getChatModel().stream(messages, {
@@ -249,6 +252,7 @@ export class VaultQAChainRunner extends BaseChainRunner {
     const responseMetadata = {
       wasTruncated: result.wasTruncated,
       tokenUsage: result.tokenUsage ?? undefined,
+      ttft: result.ttft ?? undefined,
     };
 
     // Only skip saving if it's a new chat (clearing everything)
