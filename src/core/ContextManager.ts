@@ -10,6 +10,7 @@ import {
 import { ContextProcessor } from "@/contextProcessor";
 import { logInfo } from "@/logger";
 import { Mention } from "@/mentions/Mention";
+import { getUserMemoryContent } from "@/settings/model";
 import { FileParserManager } from "@/tools/FileParserManager";
 import { ChatMessage, MessageContext } from "@/types/message";
 import { extractNoteFiles, getNotesFromTags, getNotesFromPath } from "@/utils";
@@ -56,7 +57,8 @@ export class ContextManager {
     includeActiveNote: boolean,
     activeNote: TFile | null,
     messageRepo: MessageRepository,
-    systemPrompt?: string
+    systemPrompt?: string,
+    userMemoryManager?: any
   ): Promise<ContextProcessingResult> {
     try {
       logInfo(`[ContextManager] Processing context for message ${message.id}`);
@@ -176,7 +178,11 @@ export class ContextManager {
       // 7. Process selected text contexts
       const selectedTextContextAddition = this.contextProcessor.processSelectedTextContexts();
 
-      // 8. Combine everything - context (L3 only, no L2), then user message
+      // 8. Get memory content for L3 injection (KV Cache optimization)
+      // Memory is now injected at L3 level instead of L1 to maintain system prompt stability
+      const memoryContent = await getUserMemoryContent(userMemoryManager);
+
+      // 9. Combine everything - context (L3), memory, then user message
       // L2 removed for KV cache stability (system prompt must remain stable)
       const finalProcessedMessage =
         noteContextAddition +
@@ -184,6 +190,7 @@ export class ContextManager {
         folderContextAddition +
         urlContextAddition.urlContext +
         selectedTextContextAddition +
+        (memoryContent ? `\n\n${memoryContent}\n\n` : "") +
         processedUserMessage;
 
       logInfo(`[ContextManager] Successfully processed context for message ${message.id}`);
@@ -225,7 +232,8 @@ export class ContextManager {
     chainType: ChainType,
     includeActiveNote: boolean,
     activeNote: TFile | null,
-    systemPrompt?: string
+    systemPrompt?: string,
+    userMemoryManager?: any
   ): Promise<void> {
     const message = messageRepo.getMessage(messageId);
 
@@ -243,7 +251,8 @@ export class ContextManager {
       includeActiveNote,
       activeNote,
       messageRepo, // Use same repo for L2 building
-      systemPrompt
+      systemPrompt,
+      userMemoryManager
     );
 
     messageRepo.updateProcessedText(message.id, processedContent, contextEnvelope);

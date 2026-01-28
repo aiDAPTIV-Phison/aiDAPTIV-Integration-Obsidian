@@ -170,7 +170,8 @@ export class ChatManager {
         includeActiveNote,
         activeNote,
         currentRepo, // Pass MessageRepository for L2 building
-        systemPrompt
+        systemPrompt,
+        this.chainManager.userMemoryManager // Pass userMemoryManager for L3 memory injection
       );
 
       // Update the processed content
@@ -214,7 +215,8 @@ export class ChatManager {
         chainType,
         includeActiveNote,
         activeNote,
-        systemPrompt
+        systemPrompt,
+        this.chainManager.userMemoryManager // Pass userMemoryManager for L3 memory injection
       );
 
       // Update chain memory with fresh LLM messages

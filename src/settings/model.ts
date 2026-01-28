@@ -460,20 +460,25 @@ ${userPrompt}
 export async function getSystemPromptWithMemory(
   userMemoryManager: UserMemoryManager | undefined
 ): Promise<string> {
-  const systemPrompt = getSystemPrompt();
+  // KV Cache Optimization: Return pure system prompt without memory injection
+  // Memory content is now injected in ContextManager at L3 level for better cache stability
+  return getSystemPrompt();
+}
 
+/**
+ * Get user memory content separately for injection at L3 level
+ * This improves KV cache stability by keeping system prompt static
+ */
+export async function getUserMemoryContent(
+  userMemoryManager: UserMemoryManager | undefined
+): Promise<string> {
   if (!userMemoryManager) {
-    logInfo("No UserMemoryManager provided to getSystemPromptWithMemory");
-    return systemPrompt;
+    logInfo("No UserMemoryManager provided to getUserMemoryContent");
+    return "";
   }
+
   const memoryPrompt = await userMemoryManager.getUserMemoryPrompt();
-
-  // Only include user_memory section if there's actual memory content
-  if (!memoryPrompt) {
-    return systemPrompt;
-  }
-
-  return `${memoryPrompt}\n${systemPrompt}`;
+  return memoryPrompt || "";
 }
 
 function mergeAllActiveModelsWithCoreModels(settings: CopilotSettings): CopilotSettings {
