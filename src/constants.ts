@@ -137,6 +137,7 @@ export const DEFAULT_MODEL_SETTING = {
 } as const;
 
 export enum ChatModels {
+  PHISON_KVCACHE_REUSE = "phison-kvcache-reuse",
   COPILOT_PLUS_FLASH = "copilot-plus-flash",
   GPT_5 = "gpt-5",
   GPT_5_mini = "gpt-5-mini",
@@ -199,6 +200,15 @@ export const MODEL_CAPABILITIES: Record<ModelCapability, string> = {
 };
 
 export const BUILTIN_CHAT_MODELS: CustomModel[] = [
+  {
+    name: ChatModels.PHISON_KVCACHE_REUSE,
+    provider: ChatModelProviders.OPENAI_FORMAT,
+    enabled: true,
+    isBuiltIn: true,
+    core: true,
+    baseUrl: "http://127.0.0.1:13141",
+    apiKey: "",
+  },
   {
     name: ChatModels.COPILOT_PLUS_FLASH,
     provider: ChatModelProviders.COPILOT_PLUS,
@@ -760,7 +770,7 @@ export const DEFAULT_SETTINGS: CopilotSettings = {
   amazonBedrockRegion: "",
   siliconflowApiKey: "",
   defaultChainType: ChainType.LLM_CHAIN,
-  defaultModelKey: ChatModels.OPENROUTER_GEMINI_2_5_FLASH + "|" + ChatModelProviders.OPENROUTERAI,
+  defaultModelKey: ChatModels.PHISON_KVCACHE_REUSE + "|" + ChatModelProviders.OPENAI_FORMAT,
   embeddingModelKey: EmbeddingModels.OPENAI_EMBEDDING_SMALL + "|" + EmbeddingModelProviders.OPENAI,
   temperature: DEFAULT_MODEL_SETTING.TEMPERATURE,
   maxTokens: DEFAULT_MODEL_SETTING.MAX_TOKENS,
