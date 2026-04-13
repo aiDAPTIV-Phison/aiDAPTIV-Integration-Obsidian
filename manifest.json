@@ -1,13 +1,9 @@
 {
   "id": "aiDAPTIV-Integration-Obsidian",
-  "name": "aiDAPTIV-Integration-Obsidian",
-  "version": "3.1.3",
+  "name": "aiDAPTIV Copilot for Obsidian",
+  "version": "1.0.2",
   "minAppVersion": "0.15.0",
   "description": "Phison aiDAPTIV Integration for Obsidian",
-  "author": "Logan Yang",
-  "authorUrl": "https://twitter.com/logancyang",
-  "fundingUrl": {
-    "Buy Me a Coffee": "https://www.buymeacoffee.com/logancyang",
-    "GitHub Sponsor": "https://github.com/sponsors/logancyang"
-  }
+  "author": "Phison aiDAPTIV Team",
+  "authorUrl": "https://github.com/aiDAPTIV-Phison/aiDAPTIV-Integration-Obsidian"
 }

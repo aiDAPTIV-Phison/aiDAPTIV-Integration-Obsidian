@@ -28,9 +28,12 @@ import {
 } from "lucide-react";
 import { Notice, TFile } from "obsidian";
 import React, { memo, useCallback, useEffect, useState } from "react";
-import { getAIResponse } from "@/langchainStream";
-import { useChainType } from "@/aiParams";
-import { logError } from "@/logger";
+import { useChainType, getModelKey } from "@/aiParams";
+import { logError, logInfo } from "@/logger";
+import { LayerToMessagesConverter } from "@/context/LayerToMessagesConverter";
+import { getSettings } from "@/settings/model";
+import { findCustomModel } from "@/utils";
+import { getDecryptedKey } from "@/encryptionService";
 
 function useRelevantNotes(refresher: number) {
   const [relevantNotes, setRelevantNotes] = useState<RelevantNoteEntry[]>([]);
@@ -381,33 +384,52 @@ export const RelevantNotes = memo(
           return;
         }
 
-        // Get LLM message and trigger AI response in background
-        // Don't modify llmMessage.content - it's already processed by ChatManager
+        // Get LLM message to extract the formatted prompt
         const llmMessage = chatUIState.getLLMMessage(messageId);
-        if (llmMessage) {
-          // Show TTFT metric during build process
-          hideTTFT(); // Reset any previous TTFT display
+        if (llmMessage?.contextEnvelope) {
+          hideTTFT();
 
-          // Create a custom addMessage function that captures TTFT from responseMetadata
-          const addMessageWithTTFT = (message: any) => {
-            if (message.responseMetadata?.ttft) {
-              showTTFT(message.responseMetadata.ttft);
-            }
-          };
+          // Convert context envelope to the same messages format as normal chat
+          const messages = LayerToMessagesConverter.convert(llmMessage.contextEnvelope, {
+            includeSystemMessage: true,
+            mergeUserContent: true,
+          });
 
-          // Trigger AI response without updating UI
-          // Use maxTokens: 1 to minimize response length (we only need KV cache, not the response)
-          // The stream will be aborted after receiving ~1 token worth of content
-          await getAIResponse(
-            llmMessage,
-            chainManager,
-            addMessageWithTTFT, // Capture TTFT from response metadata
-            () => {}, // No-op for setCurrentAiMessage
-            () => {}, // No-op for setAbortController
-            { debug: false, updateLoadingMessage: () => {}, maxTokens: 1 }
-          );
+          // Resolve server config from current model settings
+          const settings = getSettings();
+          const modelKey = getModelKey();
+          const customModel = findCustomModel(modelKey, settings.activeModels);
+          const apiKey = await getDecryptedKey(customModel.apiKey || "");
+          const baseUrl = (customModel.baseUrl || "").replace(/\/+$/, "");
+
+          // Direct HTTP call with max_tokens:1 and stream:false.
+          // The server completes prefill, generates 1 token, then finishes normally.
+          // Because the request is NOT aborted, SSD KV cache offload completes successfully.
+          const prefillStart = performance.now();
+          const response = await fetch(`${baseUrl}/chat/completions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+            },
+            body: JSON.stringify({
+              model: customModel.name,
+              messages,
+              max_tokens: 1,
+              stream: false,
+            }),
+          });
+          const prefillMs = performance.now() - prefillStart;
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server returned ${response.status}: ${errorText}`);
+          }
+
+          logInfo(`[buildKvCache] Prefill completed in ${prefillMs.toFixed(0)}ms`);
+          showTTFT(prefillMs);
         } else {
-          logError("getLLMMessage returned null for messageId:", messageId);
+          logError("getLLMMessage returned null or missing contextEnvelope for messageId:", messageId);
         }
 
         // Clean up the message from chat history (silent operation)

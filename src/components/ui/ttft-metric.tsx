@@ -33,6 +33,7 @@ export const TTFTMetric: React.FC<TTFTMetricProps> = ({ ttft, isVisible = true, 
   return (
     <Badge
       variant="outline"
+      // eslint-disable-next-line tailwindcss/no-custom-classname
       className={cn(
         "tw-flex tw-items-center tw-px-2 tw-py-1",
         "tw-text-xs tw-font-medium tw-text-normal",

@@ -208,6 +208,7 @@ export const BUILTIN_CHAT_MODELS: CustomModel[] = [
     core: true,
     baseUrl: "http://127.0.0.1:13141",
     apiKey: "",
+    capabilities: [ModelCapability.REASONING],
   },
   {
     name: ChatModels.COPILOT_PLUS_FLASH,

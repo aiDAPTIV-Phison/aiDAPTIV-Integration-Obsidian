@@ -99,8 +99,8 @@ export function applyPlusSettings(): void {
   }
 }
 
-export function createPlusPageUrl(medium: PlusUtmMedium): string {
-  return `https://www.obsidiancopilot.com?utm_source=obsidian&utm_medium=${medium}`;
+export function createPlusPageUrl(_medium: PlusUtmMedium): string {
+  return `https://github.com/aiDAPTIV-Phison/aiDAPTIV-Integration-Obsidian`;
 }
 
 export function navigateToPlusPage(medium: PlusUtmMedium): void {

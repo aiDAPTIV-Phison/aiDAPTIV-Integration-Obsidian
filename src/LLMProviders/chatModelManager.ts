@@ -256,8 +256,8 @@ export default class ChatModelManager {
           baseURL: customModel.baseUrl || "https://openrouter.ai/api/v1",
           fetch: customModel.enableCors ? safeFetch : undefined,
           defaultHeaders: {
-            "HTTP-Referer": "https://obsidiancopilot.com",
-            "X-Title": "Obsidian Copilot",
+            "HTTP-Referer": "https://github.com/aiDAPTIV-Phison/aiDAPTIV-Integration-Obsidian",
+            "X-Title": "aiDAPTIV Copilot for Obsidian",
           },
         },
         // Enable reasoning if the model has the reasoning capability
@@ -531,6 +531,34 @@ export default class ChatModelManager {
       }
     }
 
+    // Add presencePenalty only if defined
+    if (customModel.presencePenalty !== undefined) {
+      // OpenAI-compatible providers support presencePenalty
+      if (
+        [
+          ChatModelProviders.OPENAI,
+          ChatModelProviders.AZURE_OPENAI,
+          ChatModelProviders.OPENROUTERAI,
+          ChatModelProviders.LM_STUDIO,
+          ChatModelProviders.OPENAI_FORMAT,
+          ChatModelProviders.DEEPSEEK,
+          ChatModelProviders.SILICONFLOW,
+        ].includes(provider)
+      ) {
+        params.presencePenalty = customModel.presencePenalty;
+      }
+    }
+
+    // Add repetitionPenalty only if defined
+    if (customModel.repetitionPenalty !== undefined) {
+      // Ollama supports repeatPenalty natively; OPENAI_FORMAT (llama.cpp) accepts it as an extension
+      if (provider === ChatModelProviders.OLLAMA) {
+        params.repeatPenalty = customModel.repetitionPenalty;
+      } else if (provider === ChatModelProviders.OPENAI_FORMAT) {
+        params.repetitionPenalty = customModel.repetitionPenalty;
+      }
+    }
+
     return params;
   }
 
@@ -734,7 +762,24 @@ export default class ChatModelManager {
       logInfo(`Enabling Responses API for GPT-5 model: ${model.name} (${selectedModel.vendor})`);
     }
 
-    const newModelInstance = new selectedModel.AIConstructor(constructorConfig);
+    // For OPENAI_FORMAT models with REASONING capability, use ChatDeepSeek instead of ChatOpenAI.
+    // ChatDeepSeek extends ChatOpenAI and extracts reasoning_content from streaming deltas,
+    // enabling real-time display of thinking tokens from servers like llama.cpp (--reasoning-format deepseek).
+    let AIConstructor = selectedModel.AIConstructor;
+    if (
+      selectedModel.vendor === ChatModelProviders.OPENAI_FORMAT &&
+      model.capabilities?.includes(ModelCapability.REASONING)
+    ) {
+      AIConstructor = ChatDeepSeek;
+      if (!constructorConfig.apiKey) {
+        constructorConfig.apiKey = "default-key";
+      }
+      logInfo(
+        `Using ChatDeepSeek for OPENAI_FORMAT model with REASONING capability: ${model.name}`
+      );
+    }
+
+    const newModelInstance = new AIConstructor(constructorConfig);
     return newModelInstance;
   }
 

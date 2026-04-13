@@ -1,0 +1,23 @@
+aiDAPTIV Copilot for Obsidian
+Copyright (C) 2025-2026 Phison aiDAPTIV Team
+
+This software is a modified version of "Copilot for Obsidian",
+originally created by Logan Yang (logancyang).
+
+Original project:
+  Name:    Copilot for Obsidian
+  Author:  Logan Yang
+  Source:  https://github.com/logancyang/obsidian-copilot
+  License: GNU Affero General Public License v3.0 (AGPL-3.0)
+
+This modified version is maintained by Phison aiDAPTIV Team:
+  Source:  https://github.com/aiDAPTIV-Phison/aiDAPTIV-Integration-Obsidian
+  License: GNU Affero General Public License v3.0 (AGPL-3.0)
+
+Modifications made by Phison aiDAPTIV Team include integration with
+aiDAPTIV KV Cache technology and related customizations for Phison products.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.

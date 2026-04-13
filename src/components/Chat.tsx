@@ -15,7 +15,6 @@ import { logInfo, logError } from "@/logger";
 import { ChatControls, reloadCurrentProject } from "@/components/chat-components/ChatControls";
 import ChatInput from "@/components/chat-components/ChatInput";
 import ChatMessages from "@/components/chat-components/ChatMessages";
-import { NewVersionBanner } from "@/components/chat-components/NewVersionBanner";
 import { ProjectList } from "@/components/chat-components/ProjectList";
 import ProgressCard from "@/components/project/progress-card";
 import {
@@ -724,7 +723,6 @@ const ChatInternal: React.FC<ChatProps & { chatInput: ReturnType<typeof useChatI
   const renderChatComponents = () => (
     <>
       <div className="tw-flex tw-size-full tw-flex-col tw-overflow-hidden">
-        <NewVersionBanner currentVersion={plugin.manifest.version} />
         <ChatMessages
           chatHistory={chatHistory}
           currentAiMessage={currentAiMessage}

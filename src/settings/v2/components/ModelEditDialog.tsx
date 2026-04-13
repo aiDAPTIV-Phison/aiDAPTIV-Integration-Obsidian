@@ -330,6 +330,57 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
               />
             </FormField>
 
+            <FormField>
+              <ParameterControl
+                type={"slider"}
+                label="Presence Penalty"
+                value={localModel.presencePenalty}
+                onChange={(value) => handleLocalUpdate("presencePenalty", value)}
+                disableFn={() => handleLocalReset("presencePenalty")}
+                max={2}
+                min={-2}
+                step={0.05}
+                defaultValue={0}
+                helpText={
+                  <>
+                    <p>
+                      Penalizes tokens that have already appeared in the text, regardless of how
+                      many times they appear. Encourages the model to explore new topics.
+                    </p>
+                    <em>
+                      Supported by OpenAI-compatible providers (e.g. OPENAI_FORMAT, DeepSeek).
+                    </em>
+                  </>
+                }
+              />
+            </FormField>
+
+            <FormField>
+              <ParameterControl
+                type={"slider"}
+                label="Repetition Penalty"
+                value={localModel.repetitionPenalty}
+                onChange={(value) => handleLocalUpdate("repetitionPenalty", value)}
+                disableFn={() => handleLocalReset("repetitionPenalty")}
+                max={2}
+                min={0.5}
+                step={0.05}
+                defaultValue={1}
+                helpText={
+                  <>
+                    <p>
+                      Penalizes repeated tokens during generation. Value of 1.0 means no penalty;
+                      values above 1.0 discourage repetition.
+                    </p>
+                    <em>
+                      Supported by Ollama and OPENAI_FORMAT (llama.cpp). Recommended value: 1.1–1.3
+                      to reduce thinking loops.
+                    </em>
+                  </>
+                }
+              />
+            </FormField>
+
             {/* Reasoning Effort and Verbosity for GPT-5 and O-series models */}
             {localModel.provider === "openai" &&
               (localModel.name.startsWith("gpt-5") ||
