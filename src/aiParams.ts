@@ -128,6 +128,8 @@ export interface CustomModel {
   maxTokens?: number;
   topP?: number;
   frequencyPenalty?: number;
+  presencePenalty?: number;
+  repetitionPenalty?: number;
 
   projectEnabled?: boolean;
   plusExclusive?: boolean;

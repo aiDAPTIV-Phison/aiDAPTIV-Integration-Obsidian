@@ -504,7 +504,7 @@ function mergeActiveModels(
 ): CustomModel[] {
   const modelMap = new Map<string, CustomModel>();
 
-  // Add core models to the map first (maintains order from builtInModels)
+  // Add core models to the map first
   builtInModels
     .filter((model) => model.core)
     .forEach((model) => {
@@ -526,6 +526,7 @@ function mergeActiveModels(
           ...model,
           isBuiltIn: true,
           believerExclusive: builtInModel.believerExclusive,
+          capabilities: builtInModel.capabilities,
         });
       } else {
         modelMap.set(key, {
@@ -538,27 +539,5 @@ function mergeActiveModels(
     }
   });
 
-  // Return models in the correct order:
-  // 1. Core built-in models in the order defined in BUILTIN_CHAT_MODELS
-  // 2. Non-core models
-  const result: CustomModel[] = [];
-
-  // Add core models first (in builtin order)
-  builtInModels
-    .filter((model) => model.core)
-    .forEach((model) => {
-      const key = getModelKeyFromModel(model);
-      const mergedModel = modelMap.get(key);
-      if (mergedModel) {
-        result.push(mergedModel);
-        modelMap.delete(key);
-      }
-    });
-
-  // Add remaining non-core models
-  modelMap.forEach((model) => {
-    result.push(model);
-  });
-
-  return result;
+  return Array.from(modelMap.values());
 }
