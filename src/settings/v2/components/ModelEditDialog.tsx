@@ -365,7 +365,7 @@ export const ModelEditModalContent: React.FC<ModelEditModalContentProps> = ({
                 max={2}
                 min={0.5}
                 step={0.05}
-                defaultValue={1}
+                defaultValue={1.25}
                 helpText={
                   <>
                     <p>
