@@ -130,7 +130,7 @@ export const PLUS_UTM_MEDIUMS = {
 export type PlusUtmMedium = (typeof PLUS_UTM_MEDIUMS)[keyof typeof PLUS_UTM_MEDIUMS];
 
 export const DEFAULT_MODEL_SETTING = {
-  MAX_TOKENS: 6000,
+  MAX_TOKENS: 16384,
   TEMPERATURE: 0.1,
   REASONING_EFFORT: "low",
   VERBOSITY: "medium",
@@ -209,6 +209,10 @@ export const BUILTIN_CHAT_MODELS: CustomModel[] = [
     baseUrl: "http://127.0.0.1:13141",
     apiKey: "",
     capabilities: [ModelCapability.REASONING],
+    // Default sampling params for Phison KV-cache reuse model
+    frequencyPenalty: 0,
+    presencePenalty: 0,
+    repetitionPenalty: 1.25,
   },
   {
     name: ChatModels.COPILOT_PLUS_FLASH,
